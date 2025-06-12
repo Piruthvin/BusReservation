@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bus Reservation System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #0066cc;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        button {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #004d99;
+        }
+        form {
+            display: none;
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚌 Bus Reservation System</h1>
+    <div class="container">
+        <button onclick="showForm('bookForm')">Book Ticket</button>
+        <button onclick="showForm('cancelForm')">Cancel Booking</button>
+        <button onclick="showForm('checkForm')">Check Available Seats</button>
+        <button onclick="viewBuses()">View All Buses</button>
+
+        <form id="bookForm" onsubmit="bookTicket(event)">
+            <h3>Book Ticket</h3>
+            <label>Name: <input type="text" id="name"></label>
+            <label>Email: <input type="email" id="email"></label>
+            <label>Phone: <input type="text" id="phone"></label>
+            <label>Bus No: <input type="number" id="busNo"></label>
+            <label>Date (dd/MM/yyyy): <input type="text" id="date"></label>
+            <button type="submit">Book</button>
+        </form>
+
+        <form id="cancelForm" onsubmit="cancelBooking(event)">
+            <h3>Cancel Booking</h3>
+            <label>Email: <input type="email" id="cancelEmail"></label>
+            <button type="submit">Cancel</button>
+        </form>
+
+        <form id="checkForm" onsubmit="checkSeats(event)">
+            <h3>Check Available Seats</h3>
+            <label>Bus No: <input type="number" id="checkBusNo"></label>
+            <label>Date (dd/MM/yyyy): <input type="text" id="checkDate"></label>
+            <button type="submit">Check</button>
+        </form>
+
+        <div id="result" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        function showForm(id) {
+            document.querySelectorAll("form").forEach(f => f.style.display = "none");
+            document.getElementById(id).style.display = "block";
+            document.getElementById("result").innerHTML = "";
+        }
+
+        async function bookTicket(e) {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById("name").value,
+                email: document.getElementById("email").value,
+                phone: document.getElementById("phone").value,
+                busNo: document.getElementById("busNo").value,
+                date: document.getElementById("date").value
+            };
+            const res = await fetch("http://localhost:8080/book", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            const msg = await res.text();
+            document.getElementById("result").innerText = msg;
+        }
+
+        async function cancelBooking(e) {
+            e.preventDefault();
+            const email = document.getElementById("cancelEmail").value;
+            const res = await fetch(`http://localhost:8080/cancel?email=${encodeURIComponent(email)}`, {
+                method: "DELETE"
+            });
+            const msg = await res.text();
+            document.getElementById("result").innerText = msg;
+        }
+
+        async function checkSeats(e) {
+            e.preventDefault();
+            const busNo = document.getElementById("checkBusNo").value;
+            const date = document.getElementById("checkDate").value;
+            const res = await fetch(`http://localhost:8080/seats?busNo=${busNo}&date=${encodeURIComponent(date)}`);
+            const msg = await res.text();
+            document.getElementById("result").innerText = msg;
+        }
+
+        async function viewBuses() {
+            const res = await fetch("http://localhost:8080/view");
+            const buses = await res.json();
+            const html = buses.map(b =>
+                `Bus ${b.busNo} | From: ${b.from} → To: ${b.to} | Capacity: ${b.capacity} | Driver: ${b.driver}`
+            ).join("<br>");
+            document.getElementById("result").innerHTML = html;
+        }
+    </script>
+</body>
+</html>
